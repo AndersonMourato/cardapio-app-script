@@ -13,7 +13,7 @@
 
         <!-- MENU -->
         <div class="flex flex-wrap gap-4">
-          <div class="p-2 w-17 h-17 flex justify-center items-center flex-col bg-white rounded-sm cursor-pointer hover:bg-gray-200" onclick="enviarDados()">
+          <div class="p-2 w-17 h-17 flex justify-center items-center flex-col bg-white rounded-sm cursor-pointer hover:bg-gray-200">
             <svg class="fill-gray-800" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="#e3e3e3"><path d="M120-100q-9 0-14.5-5.5T100-120v-40h529.23v40q0 9-5.5 14.5t-14.5 5.5H120Zm-20-147.69v-40q0-9 5.5-14.5t14.5-5.5h164.62v-63.08h160v63.08h164.61q9 0 14.5 5.5t5.5 14.5v40H100ZM727.69-100v-246.31q-32.15-33.31-53-71.19-20.84-37.89-20.84-89.12V-860H860v353.38q0 51.23-19.77 89.43-19.77 38.19-52.54 70.88V-160H860v60H727.69Zm-13.84-532.31H800V-800h-86.15v167.69Zm43.84 229.69q18-17.53 30.16-45.5Q800-476.08 800-506.62v-65.69h-86.15v65.69q0 30.54 12.3 58.5 12.31 27.97 31.54 45.5Zm-.77 0Z"/></svg>
             <p class="font-medium text-xs"> Café </p>
           </div>
@@ -28,45 +28,7 @@
         </div>
 
         <!-- LISTA DE ITENS -->
-        <div class="w-full bg-white rounded-sm flex flex-col gap-2 p-4 pl-10 pr-10">
-          <div class="mx-auto overflow-hidden rounded-xl bg-white shadow-md">
-            <div class="flex flex-row items-center">
-              <img
-                class="max-h-30 max-w-30 md:w-full md:h-full object-cover"
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSf3_uqLKuV2UWiz3NH9QhLz_VBSXd3_OTMyQ&s"
-                alt="Modern building architecture"
-              />
-  
-              <div class="p-2">
-                <div class="text-sm font-semibold tracking-wide text-indigo-500 uppercase">Company retreats</div>
-                <p class="text-xs text-gray-500">
-                  Looking to take your team away on a retreat to enjoy awesome food and take in some sunshine? We have a list of
-                  places to do just that.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="mx-auto overflow-hidden rounded-xl bg-white shadow-md">
-            <div class="flex flex-row items-center">
-              <img
-                class="max-h-30 max-w-30 md:w-full md:h-full object-cover"
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSf3_uqLKuV2UWiz3NH9QhLz_VBSXd3_OTMyQ&s"
-                alt="Modern building architecture"
-              />
-  
-              <div class="p-2">
-                <div class="text-sm font-semibold tracking-wide text-indigo-500 uppercase">Company retreats</div>
-                <p class="text-xs text-gray-500">
-                  Looking to take your team away on a retreat to enjoy awesome food and take in some sunshine? We have a list of
-                  places to do just that.
-                </p>
-              </div>
-            </div>
-          </div>
-
-
-        </div>
+        <div id="container_itens" class="w-full bg-white rounded-sm flex flex-col gap-2 p-4"></div>
         <button type="button" class="inline-flex items-center rounded-md bg-indigo-500 px-4 py-2 text-sm leading-6 font-semibold text-white shadow" disabled>
           <svg class="mr-3 -ml-1 h-5 w-5 animate-spin text-white motion-reduce:hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
           Processing...
@@ -76,17 +38,13 @@
     
   </body>
   <script>
+    const TB_ITENS = 'TB_ITENS';
+    const TB_MENU = 'TB_MENU';
 
-    const itemTeste = [
-      3541561,
-      66,
-      'Café Expresso',
-      'Café expresso tradicional feito com água quente e grãos moídos na hora.',
-    ]
-
-
-    getDados().then((data) => {
-      processarDados(data);
+    getDados(TB_ITENS).then((data) => {
+      console.log('Dados recebidos do servidor:', data);
+      const itens = processarDados(data);
+      injectItensHTML(itens);
     }).catch((error) => {
       console.error('Erro ao obter dados do servidor:', error);
     });
@@ -105,7 +63,8 @@
         });
         return item;
       });
-      
+
+      return itens;
     }
 
     function processKeys(keys) {
@@ -127,22 +86,20 @@
       });
     }
     
-
-    
-    function getDados() {
+    function getDados(tabela) {
       return new Promise((resolve, reject) => {
         google.script.run
           .withSuccessHandler((data) => resolve(data))
           .withFailureHandler((error) => reject(error))
-          .lerDadosPlanilha("TB_ITENS");
+          .lerDadosPlanilha(tabela);
       });
     }
 
-      function enviarDados() {
+      function enviarDados(tabela, dados) {
         google.script.run
           .withSuccessHandler(onSuccess)
           .withFailureHandler(onFailure)
-          .adicionarDados("TB_ITENS", itemTeste);
+          .adicionarDados(tabela, dados);
       }
    
       function onSuccess(response) {
@@ -155,6 +112,33 @@
       
       function onFailure(error) {        
         alert('Erro ao comunicar com o servidor: ' + error.message, 'error');
+      }
+
+      function injectItensHTML(itens) {
+        console.log('Itens para injetar no HTML:', itens);
+        if (!itens || itens.length === 0) {
+          console.log('Nenhum item para exibir.');
+          return;
+        }
+
+        const container = document.getElementById('container_itens');
+        const html = itens.map(item => `
+          <div class="mx-auto overflow-hidden rounded-xl bg-white shadow-md">
+            <div class="flex w-100 flex-row items-center">
+              <img
+                class="max-h-30 max-w-30 md:w-full md:h-full object-cover"
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSf3_uqLKuV2UWiz3NH9QhLz_VBSXd3_OTMyQ&s"
+                alt="Modern building architecture"
+              />
+  
+              <div class="p-2">
+                <div class="text-sm font-semibold tracking-wide text-indigo-500 uppercase">${item.titulo}</div>
+                <p class="text-xs text-gray-500"> ${item.descricao} </p>
+              </div>
+            </div>
+          </div>
+        `).join('');
+        container.innerHTML = html;
       }
 
     </script>
