@@ -1,44 +1,60 @@
-function doGet() {
-  const htmlOutput = HtmlService.createTemplateFromFile('index').evaluate();
-  
-  htmlOutput.setTitle('Cardápio');
-
-  return htmlOutput;
+function doGet(e) {
+  try {
+    const page = e.parameter.page || 'index';
+    const allowedPages = ['index', 'adicionar'];
+    const pageName = allowedPages.includes(page) ? page : 'index';
+    const template = HtmlService.createTemplateFromFile(pageName);
+    
+    template.base_url = ScriptApp.getService().getUrl();
+    
+    const htmlOutput = template.evaluate();
+    
+    htmlOutput.setTitle('Cardápio - ' + pageName);
+    
+    return htmlOutput;
+  } catch (error) {
+    Logger.log(`Erro ao carregar página: ${error.message}`);
+    
+    const errorHtml = HtmlService.createHtmlOutput(`
+      <h1>Erro ao carregar página</h1>
+      <p><strong>Mensagem:</strong> ${error.message}</p>
+      <p><strong>Página solicitada:</strong> ${e.parameter.page || 'index'}</p>
+      <p><a href="?page=index">Voltar para página inicial</a></p>
+    `);
+    errorHtml.setTitle('Erro');
+    
+    return errorHtml;
+  }
 }
 
-function adicionarDados(tabela, dados) {
-  const tabelaSheet = getTabela(tabela);
+function addData(keyTable, data) {
+  const table = getTable(keyTable);
 
   try {
-    tabelaSheet.appendRow(dados);
-    Logger.log(`Dados adicionado com sucesso.`);
+    table.appendRow(data);
+
     return { success: true, message: 'Dados adicionados com sucesso!' };
-
   } catch (error) {
-    Logger.log(`Não foi gravar os dados na tabela ${tabela}. Erro: ${error.message}`);
-    return { success: false, message: `Não foi gravar os dados na tabela ${tabela}. Erro: ${error.message}` };
+    return { success: false, message: `Não foi gravar os dados na tabela ${keyTable}. Erro: ${error.message}` };
   }
 }
 
-function lerDadosPlanilha(tabela) {
-  const tabelaSheet = getTabela(tabela);
+function getAllData(keyTable) {
+  const table = getTable(keyTable);
+  const data = table.getDataRange().getValues();
   
-  const intervaloComDados = tabelaSheet.getDataRange();
-  const dados = intervaloComDados.getValues();
-  
-  if (!dados) {
-    return { success: false, message: `Erro: Não foi encontrado dados na tabela "${tabela}".` };
+  if (!data) {
+    return { success: false, message: `Erro: Não foi encontrado dados na tabela "${keyTable}".` };
   }
-  return dados;
+  return data;
 }
 
-function getTabela(tabela){
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
-  const tabelaSheet = planilha.getSheetByName(tabela); 
+function getTable(keyTable){
+  const table = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(keyTable); 
   
-  if (!tabelaSheet) {
-    return { success: false, message: `Erro: A tabela "${tabela}" não foi encontrada.` };
+  if (!table) {
+    return { success: false, message: `Erro: A tabela "${keyTable}" não foi encontrada.` };
   }
 
-  return tabelaSheet;
+  return table;
 }
