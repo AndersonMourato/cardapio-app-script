@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <?!= include('app'); ?>
+</head>
+
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4 flex justify-center items-start min-h-screen">
+        <div class="content max-w-2xl w-full bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-3xl font-bold tracking-tight text-gray-900 mb-6 text-center">Adicionar Novo Item ao Cardápio</h1>
+
+            <form id="formNovoItem" class="space-y-6">
+
+                <div>
+                    <label for="urlImagem" class="block text-sm font-medium text-gray-700 mb-2">
+                        URL da Imagem
+                    </label>
+                    <input type="url" id="urlImagem" name="urlImagem" placeholder="https://exemplo.com/imagem.jpg"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                    />
+                </div>
+
+                <div>
+                    <label for="titulo" class="block text-sm font-medium text-gray-700 mb-2">
+                        Título
+                    </label>
+                    <input type="text" id="titulo" name="titulo" placeholder="Nome do prato"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                        required />
+                </div>
+
+                <div>
+                    <label for="descricao" class="block text-sm font-medium text-gray-700 mb-2">
+                        Descrição
+                    </label>
+                    <textarea id="descricao" name="descricao" rows="4" placeholder="Descrição detalhada do prato..."
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                        required></textarea>
+                </div>
+
+                <div>
+                    <label for="custoEstimado" class="block text-sm font-medium text-gray-700 mb-2">
+                        Custo Estimado (R$)
+                    </label>
+                    <input type="number" id="custoEstimado" name="custoEstimado" placeholder="0.00" step="0.01" min="0"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                    />
+                </div>
+
+                <div>
+                    <label for="categoria" class="block text-sm font-medium text-gray-700 mb-2">
+                        Categoria
+                    </label>
+                    <select id="categoria" name="categoria"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+                        required>
+                        <option value="">Selecione uma categoria...</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button type="submit" id="btnSalvar"
+                        class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        Salvar
+                    </button>
+                    <button type="button" 
+                        class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                        onclick="navigateTo('<?= base_url ?>?page=index')">
+                        Cancelar
+                    </button>
+                </div>
+
+            </form>
+
+            <!-- Mensagem de status -->
+            <div id="mensagemStatus" class="mt-4 hidden">
+                <div class="p-4 rounded-md" id="alertBox">
+                    <p id="alertMessage"></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+
+<script>
+    function showAlert(message, type = 'success') {
+        const statusDiv = document.getElementById('mensagemStatus');
+        const alertBox = document.getElementById('alertBox');
+        const alertMessage = document.getElementById('alertMessage');
+
+        alertMessage.textContent = message;
+
+        if (type === 'success') {
+            alertBox.className = 'p-4 rounded-md bg-green-100 border border-green-400 text-green-700';
+        } else {
+            alertBox.className = 'p-4 rounded-md bg-red-100 border border-red-400 text-red-700';
+        }
+
+        statusDiv.classList.remove('hidden');
+
+        setTimeout(() => {
+            statusDiv.classList.add('hidden');
+        }, 5000);
+    }
+
+    async function carregarCategorias() {
+        try {
+            const data = await getData(TB_MENU);
+            const menu = processData(data);
+
+            const selectCategoria = document.getElementById('categoria');
+
+            menu.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.idMenu;
+                option.textContent = item.descricao;
+                selectCategoria.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Erro ao carregar categorias:', error);
+            showAlert('Erro ao carregar categorias do menu', 'error');
+        }
+    }
+
+    document.getElementById('formNovoItem').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const btnSalvar = document.getElementById('btnSalvar');
+        btnSalvar.disabled = true;
+        btnSalvar.textContent = 'Salvando...';
+
+        const formData = {
+            titulo: document.getElementById('titulo').value,
+            descricao: document.getElementById('descricao').value,
+            custoEstimado: parseFloat(document.getElementById('custoEstimado').value),
+            idMenu: parseInt(document.getElementById('categoria').value),
+            urlImagem: document.getElementById('urlImagem').value
+        };
+
+        const dados = [
+            "",
+            formData.idMenu,
+            formData.titulo,
+            formData.descricao,
+            formData.custoEstimado,
+            formData.urlImagem,
+        ];
+
+        try {
+            const response = await addData(TB_ITENS, dados);
+
+            if (response.success) {
+                showAlert(response.message, 'success');
+                document.getElementById('formNovoItem').reset();
+
+                setTimeout(() => {
+                    window.location.href = '?page=index';
+                }, 2000);
+            } else {
+                showAlert(response.message, 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao salvar item: ' + error.message, 'error');
+        } finally {
+            btnSalvar.disabled = false;
+            btnSalvar.textContent = 'Salvar';
+        }
+    });
+
+    carregarCategorias();
+</script>
+
+</html>

@@ -58,3 +58,7 @@ function getTable(keyTable){
 
   return table;
 }
+
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
